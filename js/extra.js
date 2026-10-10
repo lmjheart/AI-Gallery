@@ -1,5 +1,5 @@
 const CF = window.GCONF || {}, ON = !!(CF.url && CF.key);
-let HEARTS = {}, NOTES = {};
+let HEARTS = {}, NOTES = {}, PROFILES = {};
 let dev = (() => { try { let d = localStorage.getItem("gdev"); if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("gdev", d); } return d; } catch (e) { return "anon" + Math.random().toString(36).slice(2); } })();
 async function rpc(name, args) {
   const r = await fetch(`${CF.url}/rest/v1/rpc/${name}`, { method: "POST", headers: { apikey: CF.key, ...(CF.key.startsWith("eyJ") ? { Authorization: `Bearer ${CF.key}` } : {}), "Content-Type": "application/json" }, body: JSON.stringify(args || {}) });
@@ -7,6 +7,10 @@ async function rpc(name, args) {
   const t = await r.text();
   return t ? JSON.parse(t) : null;
 }
+const applyProfiles = () => D.students.forEach(s => {
+  s.base = s.base || { a: s.artistName, i: s.intro }; const pr = PROFILES[s.id];
+  s.artistName = pr && pr.name ? pr.name : s.base.a; s.intro = pr && pr.intro ? pr.intro : s.base.i;
+});
 window.mergeNote = w => { const n = NOTES[w.id] || {}; return { ...w, intent: n.intent || w.intent, prompt: n.prompt || w.prompt, reflection: n.reflection || w.reflection }; };
 window.topWorks = () => {
   const t = D.works.filter(w => HEARTS[w.id] > 0).sort((a, b) => HEARTS[b.id] - HEARTS[a.id]).slice(0, 5);
@@ -52,12 +56,22 @@ window.writePage = function () {
   if (!ON) { app.innerHTML = '<p class="empty">아직 준비 중이에요.</p>'; return; }
   app.innerHTML = `<h2>내 작품 글쓰기</h2><p>선생님께 받은 작가 코드로 내 작품의 제작 의도, 프롬프트, 소감을 쓸 수 있어요.</p>
     <div class="info"><select id="ws">${D.students.map(s => `<option value="${esc(s.id)}">${esc(s.artistName)}</option>`).join("")}</select>
-    <input id="wc" type="password" placeholder="작가 코드"><button class="btn2" id="wok">확인</button><p id="wmsg" class="note"></p></div><div id="wform"></div>`;
+    <input id="wc" type="password" placeholder="작가 코드"><button class="btn2" id="wok">확인</button><p id="wmsg" class="note"></p></div><div id="pform"></div><div id="wform"></div>`;
   const msg = document.getElementById("wmsg"), form = document.getElementById("wform");
   document.getElementById("wok").onclick = async () => {
     const sid = document.getElementById("ws").value, code = document.getElementById("wc").value.trim();
     try { if (!(await rpc("check_code", { s: sid, c: code }))) throw 0; } catch (e) { msg.textContent = "코드가 맞지 않아요."; return; }
     msg.textContent = ""; const ws = worksOf(sid);
+    const st = D.students.find(x => x.id === sid), pf = document.getElementById("pform");
+    pf.innerHTML = `<div class="info"><h3>내 작가 정보</h3><p class="note">실명·전화번호·계정은 쓰지 말아 주세요. 모두에게 공개돼요.</p>
+      <label>작가명 (20자까지)</label><input id="pn" maxlength="20" value="${esc(st.artistName)}"><label>한 줄 소개 (60자까지)</label><input id="pi" maxlength="60" value="${esc(st.intro)}">
+      <button class="btn2" id="ps">저장</button><p id="pmsg" class="note"></p></div>`;
+    pf.querySelector("#ps").onclick = async () => {
+      const n = pf.querySelector("#pn").value.trim(), i = pf.querySelector("#pi").value.trim(), pm = pf.querySelector("#pmsg");
+      if (!n) { pm.textContent = "작가명을 적어 주세요."; return; }
+      try { await rpc("save_profile", { s: sid, c: code, n, i }); PROFILES[sid] = { name: n, intro: i }; applyProfiles(); pm.textContent = "저장했어요!"; }
+      catch (e) { pm.textContent = "저장하지 못했어요. 다시 시도해 주세요."; }
+    };
     if (!ws.length) { form.innerHTML = '<p class="empty">아직 등록된 작품이 없어요. 선생님께 문의하세요.</p>'; return; }
     form.innerHTML = `<div class="info"><select id="fw">${ws.map(w => `<option value="${esc(w.id)}">${esc(w.title)}</option>`).join("")}</select>
       <p class="note">이름·전화번호·계정 같은 개인정보는 쓰지 말아 주세요.</p>
@@ -76,7 +90,7 @@ window.writePage = function () {
 (async () => {
   if (ON) {
     document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/write">내 작품 글쓰기</a>');
-    const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; return true; } catch (e) { return false; } };
+    const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; PROFILES = p.profiles || {}; applyProfiles(); return true; } catch (e) { return false; } };
     await refresh();
     // 첫 화면으로 돌아올 때 다른 노트북의 하트까지 반영
     addEventListener("hashchange", async () => { if ((location.hash === "" || location.hash === "#/") && await refresh()) route(); });
