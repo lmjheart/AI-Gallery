@@ -6,6 +6,6 @@ window.GALLERY = {
     intro: "바이브코딩과 생성형 AI로 만든 이미지, 노래, 게임, 영상을 모았어요."
   },
   exhibitions: [
-    { id: "ex1", title: "1학년 AI 창작 갤러리 ", description: "연현중 1학년 SW동아리 작품전", color: "#FFD35C", sample: true }
+    { id: "ex1", title: "1학년 AI 창작 갤러리 ", description: "연현중 1학년 SW동아리 작품전", color: "#FFD35C"}
   ]
 };
