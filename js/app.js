@@ -45,6 +45,7 @@ function student(id) {
 }
 function media(w) {
   const s = esc(w.src);
+  if (w.ext && w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a></div>`;
   if (!w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>예시 작품이라 실제 파일이 없어요.</p></div>`;
   if (w.type === "image") return `<img class="full" src="${s}" alt="${esc(w.title)}">`;
   if (w.type === "audio") return `<audio controls src="${s}"></audio>`;
