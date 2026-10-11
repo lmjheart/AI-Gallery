@@ -10,9 +10,11 @@ document.title = D.site.title;
 const avatar = (s, big) => s.profileImage
   ? `<img class="av ${big ? "big" : ""}" loading="lazy" src="${esc(s.profileImage)}" alt="">`
   : `<div class="av ${big ? "big" : ""}" style="background:${esc(s.color)}">${esc(s.artistName[0])}</div>`;
+const driveId = u => { const m = String(u || "").match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{10,})/); return m ? m[1] : ""; };
+const imgSrc = (w, sz) => { if (!(w.ext && w.type === "image")) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };
 const thumb = w => {
-  const t = w.thumbnail || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
-  return t ? `<img loading="lazy" decoding="async" src="${esc(t)}" alt="">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
+  const t = w.thumbnail || imgSrc(w, 500) || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
+  return t ? `<img loading="lazy" decoding="async" src="${esc(t)}" alt="" onerror="this.outerHTML='<div class=ph>🖼️</div>'">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
 };
 const workCard = w => `<a class="card work" href="#/work/${esc(w.id)}">${thumb(w)}<div class="body"><b>${esc(w.title)}</b><small>${LABEL[w.type] || "기타"} ${tag(w)}</small></div></a>`;
 
@@ -48,7 +50,11 @@ function student(id) {
 }
 function media(w) {
   const s = esc(w.src);
-  if (w.ext && w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a></div>`;
+  if (w.ext && w.src) {
+    const pic = imgSrc(w, 1600), btn = `<a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a>`;
+    return pic ? `<img class="full" src="${esc(pic)}" alt="${esc(w.title)}" onerror="this.style.display='none'"><p>${btn}</p>`
+      : `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p>${btn}</div>`;
+  }
   if (!w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>예시 작품이라 실제 파일이 없어요.</p></div>`;
   if (w.type === "image") return `<img class="full" src="${s}" alt="${esc(w.title)}">`;
   if (w.type === "audio") return `<audio controls src="${s}"></audio>`;
