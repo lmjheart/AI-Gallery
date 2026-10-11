@@ -8,9 +8,12 @@ document.getElementById("logo").textContent = D.site.title;
 document.title = D.site.title;
 
 const avatar = (s, big) => s.profileImage
-  ? `<img class="av ${big ? "big" : ""}" src="${esc(s.profileImage)}" alt="">`
+  ? `<img class="av ${big ? "big" : ""}" loading="lazy" src="${esc(s.profileImage)}" alt="">`
   : `<div class="av ${big ? "big" : ""}" style="background:${esc(s.color)}">${esc(s.artistName[0])}</div>`;
-const thumb = w => w.thumbnail ? `<img src="${esc(w.thumbnail)}" alt="">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
+const thumb = w => {
+  const t = w.thumbnail || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
+  return t ? `<img loading="lazy" decoding="async" src="${esc(t)}" alt="">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
+};
 const workCard = w => `<a class="card work" href="#/work/${esc(w.id)}">${thumb(w)}<div class="body"><b>${esc(w.title)}</b><small>${LABEL[w.type] || "기타"} ${tag(w)}</small></div></a>`;
 
 function home() {
