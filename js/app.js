@@ -15,7 +15,7 @@ const imgSrc = (w, sz) => { if (!(w.ext && w.type === "image")) return ""; const
 const ytId = u => { const m = String(u || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([\w-]{11})/); return m ? m[1] : ""; };
 const embedSrc = w => { const d = driveId(w.src); if (d) return `https://drive.google.com/file/d/${d}/preview`; const y = ytId(w.src); return y ? `https://www.youtube.com/embed/${y}` : ""; };
 const thumb = w => {
-  const t = w.thumbnail || imgSrc(w, 500) || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
+  const t = w.thumbnail || imgSrc(w, 800) || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
   return t ? `<img loading="lazy" decoding="async" src="${esc(t)}" alt="" onerror="this.outerHTML='<div class=ph>🖼️</div>'">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
 };
 const workCard = w => `<a class="card work" href="#/work/${esc(w.id)}">${thumb(w)}<div class="body"><b>${esc(w.title)}</b><small>${LABEL[w.type] || "기타"} ${tag(w)}</small></div></a>`;
