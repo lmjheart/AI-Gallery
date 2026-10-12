@@ -10,8 +10,9 @@ async function rpc(name, args) {
   return t ? JSON.parse(t) : null;
 }
 const applyProfiles = () => D.students.forEach(s => {
-  s.base = s.base || { a: s.artistName, i: s.intro }; const pr = PROFILES[s.id];
+  s.base = s.base || { a: s.artistName, i: s.intro, p: s.profileImage }; const pr = PROFILES[s.id];
   s.artistName = pr && pr.name ? pr.name : s.base.a; s.intro = pr && pr.intro ? pr.intro : s.base.i;
+  const pw = DBW.filter(w => w.type === "profile" && w.studentId === s.id).pop(); s.profileImage = (pw && coverUrl(pw.src).replace("sz=w800", "sz=w400")) || s.base.p;
 });
 window.mergeNote = w => { const n = NOTES[w.id] || {}; return { ...w, intent: n.intent || w.intent, prompt: n.prompt || w.prompt, reflection: n.reflection || w.reflection }; };
 window.topWorks = () => {
@@ -54,7 +55,7 @@ student = function (id) {
   };
   load();
 };
-const TYPES = [["image", "이미지"], ["audio", "노래"], ["video", "동영상"], ["game", "게임"], ["url", "웹사이트"], ["etc", "기타"]];
+const TYPES = [["image", "이미지"], ["audio", "노래"], ["video", "동영상"], ["game", "게임"], ["url", "웹사이트"], ["profile", "프로필"], ["etc", "기타"]];
 const $id = id => document.getElementById(id);
 function profileForm(sid, code) {
   const pf = $id("pform"), st = D.students.find(x => x.id === sid);
@@ -83,7 +84,7 @@ async function myWorks(sid, code) {
     const w = w0 || { id: "", title: "", type: "image", description: "", url: "", cover: "", tool: "", prompt: "", intent: "", reflection: "" }, ed = $id("wedit");
     ed.innerHTML = `<div class="info"><h3>${w.id ? "작품 고치기" : "새 작품"}</h3>
       <label>작품 제목</label><input id="e1" maxlength="40" value="${esc(w.title)}">
-      <label>작품 종류</label><select id="e2">${TYPES.map(t => `<option value="${t[0]}" ${t[0] === w.type ? "selected" : ""}>${t[1]}</option>`).join("")}</select>
+      <label>작품 종류</label><select id="e2">${TYPES.map(t => `<option value="${t[0]}" ${t[0] === w.type ? "selected" : ""}>${t[1]}</option>`).join("")}</select><p class="note" id="e2n"></p>
       <label>작품 링크 (https://로 시작)</label><input id="e3" maxlength="500" value="${esc(w.url)}">
       <label>표지 이미지 링크 (선택 · 드라이브 이미지 파일 링크)</label><input id="e9" maxlength="500" value="${esc(w.cover || "")}">
       <label>작품 설명</label><textarea id="e4" maxlength="300">${esc(w.description)}</textarea>
@@ -93,6 +94,7 @@ async function myWorks(sid, code) {
       <label>소감</label><textarea id="e8" maxlength="500">${esc(w.reflection)}</textarea>
       <button class="btn2" id="esave">저장</button> ${w.id ? '<button class="btn2" id="edel">삭제</button>' : ""}<p id="emsg" class="note"></p></div>`;
     const g = k => $id("e" + k).value, em = $id("emsg");
+    const nt = () => { $id("e2n").textContent = g(2) === "profile" ? "프로필은 이미지 링크를 한 번만 넣으면 돼요. 이 이미지가 프로필 동그라미로도 쓰여요. (표지 칸은 비워 두세요)" : ""; }; $id("e2").onchange = nt; nt();
     $id("esave").onclick = async () => {
       if (!g(1).trim()) { em.textContent = "작품 제목을 적어 주세요."; return; }
       if (!/^https:\/\/\S+$/i.test(g(3).trim())) { em.textContent = "링크는 https://로 시작해야 해요."; return; }

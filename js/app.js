@@ -1,17 +1,18 @@
 const D = window.GALLERY, app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const ICON = { image: "🖼️", audio: "🎵", video: "🎬", url: "🌐", game: "🎮", etc: "✨" };
-const LABEL = { image: "이미지", audio: "노래", video: "동영상", url: "웹사이트", game: "게임", etc: "기타" };
+const ICON = { image: "🖼️", audio: "🎵", video: "🎬", url: "🌐", game: "🎮", profile: "🙂", etc: "✨" };
+const LABEL = { image: "이미지", audio: "노래", video: "동영상", url: "웹사이트", game: "게임", profile: "프로필", etc: "기타" };
 const worksOf = id => D.works.filter(w => w.studentId === id);
 const tag = o => o.sample ? '<span class="tag">예시</span>' : "";
 document.getElementById("logo").textContent = D.site.title;
 document.title = D.site.title;
 
-const avatar = (s, big) => s.profileImage
-  ? `<img class="av ${big ? "big" : ""}" loading="lazy" src="${esc(s.profileImage)}" alt="">`
-  : `<div class="av ${big ? "big" : ""}" style="background:${esc(s.color)}">${esc(s.artistName[0])}</div>`;
+const avatar = (s, big) => {
+  const c = `av ${big ? "big" : ""}`, ph = `<div class="${c}" style="background:${esc(s.color)}">${esc(s.emoji || s.artistName[0] || "")}</div>`;
+  return s.profileImage ? `<img class="${c}" loading="lazy" referrerpolicy="no-referrer" src="${esc(s.profileImage)}" alt="" data-ph="${esc(ph)}" onerror="this.outerHTML=this.dataset.ph">` : ph;
+};
 const driveId = u => { u = String(u || "").trim(); if (!/^https:\/\/drive\.google\.com\//i.test(u)) return ""; const m = u.match(/\/d\/([\w-]{10,})/) || u.match(/[?&]id=([\w-]{10,})/); return m ? m[1] : ""; };
-const imgSrc = (w, sz) => { if (!(w.ext && w.type === "image")) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };
+const imgSrc = (w, sz) => { if (!(w.ext && (w.type === "image" || w.type === "profile"))) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };
 const ytId = u => { const m = String(u || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([\w-]{11})/); return m ? m[1] : ""; };
 const sunoId = u => { const m = String(u || "").match(/suno\.com\/song\/([0-9a-f-]{36})/i); return m ? m[1] : ""; };
 const canvaEmb = u => { const m = String(u || "").match(/^https:\/\/(?:www\.)?canva\.com\/design\/([\w-]+)(?:\/([\w-]+))?\/(?:view|watch)/i); return m ? `https://www.canva.com/design/${m[1]}/${m[2] ? m[2] + "/" : ""}view?embed` : ""; };
@@ -56,9 +57,9 @@ function student(id) {
 function media(w) {
   const s = esc(w.src);
   if (w.ext && w.src) {
-    const em = embedSrc(w), btn = `<a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">새 창에서 열기</a>`;
+    const em = embedSrc(w), noFrame = /\.canva\.site(\/|$)/i.test(w.src), btn = `<a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">새 창에서 열기</a>`;
     return em ? `<iframe class="embed ${w.type === "audio" || /suno\.com/.test(w.src) ? "aud" : ""}" src="${esc(em)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe><p>${btn}</p>`
-      : `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a><button class="btn2" data-u="${s}" onclick="openHere(this)">이 화면에서 열어 보기</button></div>`;
+      : `<div class="ph huge">${ICON[w.type] || "✨"}<p>${noFrame ? "이 작품은 새 창에서 열려요." : "작품은 다른 서비스에 있어요. 새 창에서 열려요."}</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a>${noFrame ? "" : `<button class="btn2" data-u="${s}" onclick="openHere(this)">이 화면에서 열어 보기</button>`}</div>`;
   }
   if (!w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>예시 작품이라 실제 파일이 없어요.</p></div>`;
   if (w.type === "image") return `<img class="full" src="${s}" alt="${esc(w.title)}">`;
