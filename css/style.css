@@ -52,3 +52,6 @@ a:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .card.work img,.card.work .ph,.list.big .card.work img,.list.big .card.work .ph{height:auto;aspect-ratio:1/1;object-fit:cover;object-position:center 25%}
 .list.big{grid-template-columns:repeat(auto-fit,minmax(260px,400px));justify-content:start}
 img.av{object-position:center 25%}
+
+.card.work{position:relative}.pill{position:absolute;top:10px;left:10px;z-index:1;padding:2px 12px;border-radius:99px;background:rgba(255,255,255,.93);font-size:.85rem;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px}.chip{min-height:44px;padding:8px 16px;border:2px solid #E4DEFF;border-radius:99px;background:#fff;font:inherit;font-weight:700;cursor:pointer}.chip.on{background:var(--lilac);border-color:var(--lilac);color:#fff}

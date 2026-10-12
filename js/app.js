@@ -18,7 +18,7 @@ const thumb = w => {
   const t = w.thumbnail || imgSrc(w, 800) || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
   return t ? `<img loading="lazy" decoding="async" src="${esc(t)}" alt="" onerror="this.outerHTML='<div class=ph>🖼️</div>'">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
 };
-const workCard = w => `<a class="card work" href="#/work/${esc(w.id)}">${thumb(w)}<div class="body"><b>${esc(w.title)}</b><small>${LABEL[w.type] || "기타"} ${tag(w)}</small></div></a>`;
+const workCard = w => `<a class="card work" href="#/work/${esc(w.id)}">${thumb(w)}<span class="pill">${ICON[w.type] || "✨"} ${LABEL[w.type] || "기타"}</span><div class="body"><b>${esc(w.title)}</b> ${tag(w)}</div></a>`;
 
 function home() {
   const feat = (window.topWorks || (() => D.works.filter(w => w.featured).slice(0, 4)))();
@@ -103,7 +103,7 @@ function notFound() { app.innerHTML = `<p class="empty">찾을 수 없는 페이
 
 function route() {
   const [p, a] = location.hash.replace(/^#\/?/, "").split("/");
-  ({ exhibitions, students, student, work, write: window.writePage }[p] || home)(a);
+  ({ exhibitions, students, student, work, write: window.writePage, all: window.allPage }[p] || home)(a);
   window.scrollTo(0, 0);
 }
 addEventListener("hashchange", route); route();

@@ -1,6 +1,7 @@
 const CF = window.GCONF || {}, ON = !!(CF.url && CF.key);
 let HEARTS = {}, NOTES = {}, PROFILES = {}, DBW = [];
 const BASE_WORKS = D.works.slice();
+const coverUrl = u => { u = String(u || "").trim(); if (!u) return ""; const d = driveId(u); return d ? `https://drive.google.com/thumbnail?id=${d}&sz=w800` : (/^https:\/\//i.test(u) ? u : ""); };
 let dev = (() => { try { let d = localStorage.getItem("gdev"); if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("gdev", d); } return d; } catch (e) { return "anon" + Math.random().toString(36).slice(2); } })();
 async function rpc(name, args) {
   const r = await fetch(`${CF.url}/rest/v1/rpc/${name}`, { method: "POST", headers: { apikey: CF.key, ...(CF.key.startsWith("eyJ") ? { Authorization: `Bearer ${CF.key}` } : {}), "Content-Type": "application/json" }, body: JSON.stringify(args || {}) });
@@ -79,11 +80,12 @@ async function myWorks(sid, code) {
   };
   const load = async () => { try { list = (await rpc("my_works", { s: sid, c: code })) || []; } catch (e) { list = []; } draw(); };
   const edit = w0 => {
-    const w = w0 || { id: "", title: "", type: "image", description: "", url: "", tool: "", prompt: "", intent: "", reflection: "" }, ed = $id("wedit");
+    const w = w0 || { id: "", title: "", type: "image", description: "", url: "", cover: "", tool: "", prompt: "", intent: "", reflection: "" }, ed = $id("wedit");
     ed.innerHTML = `<div class="info"><h3>${w.id ? "작품 고치기" : "새 작품"}</h3>
       <label>작품 제목</label><input id="e1" maxlength="40" value="${esc(w.title)}">
       <label>작품 종류</label><select id="e2">${TYPES.map(t => `<option value="${t[0]}" ${t[0] === w.type ? "selected" : ""}>${t[1]}</option>`).join("")}</select>
       <label>작품 링크 (https://로 시작)</label><input id="e3" maxlength="500" value="${esc(w.url)}">
+      <label>표지 이미지 링크 (선택 · 드라이브 이미지 파일 링크)</label><input id="e9" maxlength="500" value="${esc(w.cover || "")}">
       <label>작품 설명</label><textarea id="e4" maxlength="300">${esc(w.description)}</textarea>
       <label>사용한 AI 도구</label><input id="e5" maxlength="60" value="${esc(w.tool)}">
       <label>사용한 프롬프트</label><textarea id="e6" maxlength="3000" rows="5">${esc(w.prompt)}</textarea>
@@ -94,7 +96,7 @@ async function myWorks(sid, code) {
     $id("esave").onclick = async () => {
       if (!g(1).trim()) { em.textContent = "작품 제목을 적어 주세요."; return; }
       if (!/^https:\/\/\S+$/i.test(g(3).trim())) { em.textContent = "링크는 https://로 시작해야 해요."; return; }
-      try { await rpc("save_my_work", { s: sid, c: code, w: w.id, t: g(1), ty: g(2), u: g(3), d: g(4), tl: g(5), p: g(6), i: g(7), r: g(8) }); note = "저장했어요. 선생님이 확인하면 공개돼요."; await load(); }
+      try { await rpc("save_my_work", { s: sid, c: code, w: w.id, t: g(1), ty: g(2), u: g(3), cv: g(9), d: g(4), tl: g(5), p: g(6), i: g(7), r: g(8) }); note = "저장했어요. 선생님이 확인하면 공개돼요."; await load(); }
       catch (e) { em.textContent = String(e.message).includes("limit") ? "작품은 8개까지 올릴 수 있어요." : "저장하지 못했어요. 입력을 확인해 주세요."; }
     };
     if (w.id) $id("edel").onclick = async () => {
@@ -130,10 +132,18 @@ window.writePage = function () {
     msg.textContent = ""; profileForm(sid, code); myWorks(sid, code); notesForm(sid, code);
   };
 };
+window.allPage = function () {
+  const f = window.__f || "all";
+  const list = D.works.filter(w => f === "all" || w.type === f).sort((a, b) => (HEARTS[b.id] || 0) - (HEARTS[a.id] || 0));
+  app.innerHTML = `<h2>작품 모아보기</h2><div class="chips">${[["all", "전체"], ...Object.entries(LABEL)].map(([k, v]) => `<button class="chip ${k === f ? "on" : ""}" data-k="${k}">${k === "all" ? "" : ICON[k] + " "}${v}</button>`).join("")}</div>
+    ${list.length ? `<div class="grid">${list.map(workCard).join("")}</div>` : '<p class="empty">이 종류의 작품이 아직 없어요.</p>'}`;
+  app.querySelectorAll(".chip").forEach(b => b.onclick = () => { window.__f = b.dataset.k; window.allPage(); });
+};
 (async () => {
+  document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/all">작품 모아보기</a>');
   if (ON) {
     document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/write">내 작품 글쓰기</a>');
-    const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; PROFILES = p.profiles || {}; DBW = p.works || []; D.works = BASE_WORKS.concat(DBW.map(w => ({ ...w, ext: true }))); applyProfiles(); return true; } catch (e) { return false; } };
+    const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; PROFILES = p.profiles || {}; DBW = p.works || []; D.works = BASE_WORKS.concat(DBW.map(w => ({ ...w, ext: true, thumbnail: coverUrl(w.cover) }))); applyProfiles(); return true; } catch (e) { return false; } };
     await refresh();
     // 첫 화면으로 돌아올 때 다른 노트북의 하트까지 반영
     addEventListener("hashchange", async () => { if ((location.hash === "" || location.hash === "#/") && await refresh()) route(); });
