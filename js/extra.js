@@ -96,8 +96,9 @@ async function myWorks(sid, code) {
     $id("esave").onclick = async () => {
       if (!g(1).trim()) { em.textContent = "작품 제목을 적어 주세요."; return; }
       if (!/^https:\/\/\S+$/i.test(g(3).trim())) { em.textContent = "링크는 https://로 시작해야 해요."; return; }
+      const sv = $id("esave"); if (sv.disabled) return; sv.disabled = true; sv.textContent = "저장 중…";
       try { await rpc("save_my_work", { s: sid, c: code, w: w.id, t: g(1), ty: g(2), u: g(3), cv: g(9), d: g(4), tl: g(5), p: g(6), i: g(7), r: g(8) }); note = "저장했어요. 선생님이 확인하면 공개돼요."; await load(); }
-      catch (e) { em.textContent = String(e.message).includes("limit") ? "작품은 8개까지 올릴 수 있어요." : "저장하지 못했어요. 입력을 확인해 주세요."; }
+      catch (e) { sv.disabled = false; sv.textContent = "저장"; em.textContent = String(e.message).includes("limit") ? "작품은 8개까지 올릴 수 있어요." : "저장하지 못했어요. 입력을 확인해 주세요."; }
     };
     if (w.id) $id("edel").onclick = async () => {
       if (!confirm("이 작품을 삭제할까요?")) return;
