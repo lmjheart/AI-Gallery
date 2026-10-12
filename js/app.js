@@ -1,7 +1,7 @@
 const D = window.GALLERY, app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const ICON = { image: "🖼️", audio: "🎵", video: "🎬", url: "🌐", game: "🎮", profile: "🙂", etc: "✨" };
-const LABEL = { image: "이미지", audio: "노래", video: "동영상", url: "웹사이트", game: "게임", profile: "프로필", etc: "기타" };
+const ICON = { image: "🖼️", audio: "🎵", video: "🎬", url: "🌐", game: "🎮", avatar: "⭕", profile: "🙂", etc: "✨" };
+const LABEL = { image: "이미지", audio: "노래", video: "동영상", url: "웹사이트", game: "게임", avatar: "썸네일", profile: "프로필", etc: "기타" };
 const worksOf = id => D.works.filter(w => w.studentId === id);
 const tag = o => o.sample ? '<span class="tag">예시</span>' : "";
 document.getElementById("logo").textContent = D.site.title;
@@ -9,7 +9,7 @@ document.title = D.site.title;
 
 const avatar = (s, big) => {
   const c = `av ${big ? "big" : ""}`, ph = `<div class="${c}" style="background:${esc(s.color)}">${esc(s.emoji || s.artistName[0] || "")}</div>`;
-  return s.profileImage ? `<img class="${c}" loading="lazy" referrerpolicy="no-referrer" src="${esc(s.profileImage)}" alt="" data-ph="${esc(ph)}" onerror="this.outerHTML=this.dataset.ph">` : ph;
+  return s.profileImage ? `<img class="${c}" loading="lazy" referrerpolicy="no-referrer" style="border:4px solid ${esc(s.color)}" src="${esc(s.profileImage)}" alt="" data-ph="${esc(ph)}" onerror="this.outerHTML=this.dataset.ph">` : ph;
 };
 const driveId = u => { u = String(u || "").trim(); if (!/^https:\/\/drive\.google\.com\//i.test(u)) return ""; const m = u.match(/\/d\/([\w-]{10,})/) || u.match(/[?&]id=([\w-]{10,})/); return m ? m[1] : ""; };
 const imgSrc = (w, sz) => { if (!(w.ext && (w.type === "image" || w.type === "profile"))) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };

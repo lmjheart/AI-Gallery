@@ -12,7 +12,7 @@ async function rpc(name, args) {
 const applyProfiles = () => D.students.forEach(s => {
   s.base = s.base || { a: s.artistName, i: s.intro, p: s.profileImage }; const pr = PROFILES[s.id];
   s.artistName = pr && pr.name ? pr.name : s.base.a; s.intro = pr && pr.intro ? pr.intro : s.base.i;
-  const pw = DBW.filter(w => w.type === "profile" && w.studentId === s.id).pop(); s.profileImage = (pw && coverUrl(pw.src).replace("sz=w800", "sz=w400")) || s.base.p;
+  const pw = DBW.filter(w => w.type === "avatar" && w.studentId === s.id).pop(); s.profileImage = (pw && coverUrl(pw.src).replace("sz=w800", "sz=w400")) || s.base.p;
 });
 window.mergeNote = w => { const n = NOTES[w.id] || {}; return { ...w, intent: n.intent || w.intent, prompt: n.prompt || w.prompt, reflection: n.reflection || w.reflection }; };
 window.topWorks = () => {
@@ -55,7 +55,7 @@ student = function (id) {
   };
   load();
 };
-const TYPES = [["image", "이미지"], ["audio", "노래"], ["video", "동영상"], ["game", "게임"], ["url", "웹사이트"], ["profile", "프로필"], ["etc", "기타"]];
+const TYPES = [["image", "이미지"], ["audio", "노래"], ["video", "동영상"], ["game", "게임"], ["url", "웹사이트"], ["avatar", "썸네일 (목록 원형 이미지)"], ["profile", "프로필"], ["etc", "기타"]];
 const $id = id => document.getElementById(id);
 function profileForm(sid, code) {
   const pf = $id("pform"), st = D.students.find(x => x.id === sid);
@@ -94,7 +94,8 @@ async function myWorks(sid, code) {
       <label>소감</label><textarea id="e8" maxlength="500">${esc(w.reflection)}</textarea>
       <button class="btn2" id="esave">저장</button> ${w.id ? '<button class="btn2" id="edel">삭제</button>' : ""}<p id="emsg" class="note"></p></div>`;
     const g = k => $id("e" + k).value, em = $id("emsg");
-    const nt = () => { $id("e2n").textContent = g(2) === "profile" ? "프로필은 이미지 링크를 한 번만 넣으면 돼요. 이 이미지가 프로필 동그라미로도 쓰여요. (표지 칸은 비워 두세요)" : ""; }; $id("e2").onchange = nt; nt();
+    const NOTE = { avatar: "학생 목록의 원형 이미지로 쓰여요. 정사각형 이미지를 올리고, 중요한 모습은 가운데에 두세요. (표지 칸은 비워 두세요)", profile: "내 프로필 이미지 링크를 넣어요. 작품 모아보기의 '프로필'에 모여요. 학생 목록의 원형 이미지는 '썸네일' 종류로 따로 올려요." };
+    const nt = () => { $id("e2n").textContent = NOTE[g(2)] || ""; }; $id("e2").onchange = nt; nt();
     $id("esave").onclick = async () => {
       if (!g(1).trim()) { em.textContent = "작품 제목을 적어 주세요."; return; }
       if (!/^https:\/\/\S+$/i.test(g(3).trim())) { em.textContent = "링크는 https://로 시작해야 해요."; return; }
@@ -138,7 +139,7 @@ window.writePage = function () {
 window.allPage = function () {
   const f = window.__f || "all";
   const list = D.works.filter(w => f === "all" || w.type === f).sort((a, b) => (HEARTS[b.id] || 0) - (HEARTS[a.id] || 0));
-  app.innerHTML = `<h2>작품 모아보기</h2><div class="chips">${[["all", "전체"], ...Object.entries(LABEL)].map(([k, v]) => `<button class="chip ${k === f ? "on" : ""}" data-k="${k}">${k === "all" ? "" : ICON[k] + " "}${v}</button>`).join("")}</div>
+  app.innerHTML = `<h2>작품 모아보기</h2><div class="chips">${[["all", "전체"], ...Object.entries(LABEL).filter(([k]) => k !== "avatar")].map(([k, v]) => `<button class="chip ${k === f ? "on" : ""}" data-k="${k}">${k === "all" ? "" : ICON[k] + " "}${v}</button>`).join("")}</div>
     ${list.length ? `<div class="grid">${list.map(workCard).join("")}</div>` : '<p class="empty">이 종류의 작품이 아직 없어요.</p>'}`;
   app.querySelectorAll(".chip").forEach(b => b.onclick = () => { window.__f = b.dataset.k; window.allPage(); });
 };
@@ -146,7 +147,7 @@ window.allPage = function () {
   document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/all">작품 모아보기</a>');
   if (ON) {
     document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/write">내 작품 글쓰기</a>');
-    const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; PROFILES = p.profiles || {}; DBW = p.works || []; D.works = BASE_WORKS.concat(DBW.map(w => ({ ...w, ext: true, thumbnail: coverUrl(w.cover) }))); applyProfiles(); return true; } catch (e) { return false; } };
+    const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; PROFILES = p.profiles || {}; DBW = p.works || []; D.works = BASE_WORKS.concat(DBW.filter(w => w.type !== "avatar").map(w => ({ ...w, ext: true, thumbnail: coverUrl(w.cover) }))); applyProfiles(); return true; } catch (e) { return false; } };
     await refresh();
     // 첫 화면으로 돌아올 때 다른 노트북의 하트까지 반영
     addEventListener("hashchange", async () => { if ((location.hash === "" || location.hash === "#/") && await refresh()) route(); });
