@@ -9,7 +9,8 @@ document.title = D.site.title;
 
 const avatar = (s, big) => {
   const c = `av ${big ? "big" : ""}`, ph = `<div class="${c}" style="background:${esc(s.color)}">${esc(s.emoji || s.artistName[0] || "")}</div>`;
-  return s.profileImage ? `<img class="${c}" loading="lazy" referrerpolicy="no-referrer" style="border:4px solid ${esc(s.color)}" src="${esc(s.profileImage)}" alt="" data-ph="${esc(ph)}" onerror="this.outerHTML=this.dataset.ph">` : ph;
+  const src = big ? (s.bigImage || s.profileImage) : s.profileImage;
+  return src ? `<img class="${c}" loading="lazy" referrerpolicy="no-referrer" style="border:4px solid ${esc(s.color)}" src="${esc(src)}" alt="" data-ph="${esc(ph)}" onerror="this.outerHTML=this.dataset.ph">` : ph;
 };
 const driveId = u => { u = String(u || "").trim(); if (!/^https:\/\/drive\.google\.com\//i.test(u)) return ""; const m = u.match(/\/d\/([\w-]{10,})/) || u.match(/[?&]id=([\w-]{10,})/); return m ? m[1] : ""; };
 const imgSrc = (w, sz) => { if (!(w.ext && (w.type === "image" || w.type === "profile"))) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };
