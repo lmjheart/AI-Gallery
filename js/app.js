@@ -10,13 +10,14 @@ document.title = D.site.title;
 const avatar = (s, big) => s.profileImage
   ? `<img class="av ${big ? "big" : ""}" loading="lazy" src="${esc(s.profileImage)}" alt="">`
   : `<div class="av ${big ? "big" : ""}" style="background:${esc(s.color)}">${esc(s.artistName[0])}</div>`;
-const driveId = u => { const m = String(u || "").match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{10,})/); return m ? m[1] : ""; };
+const driveId = u => { u = String(u || "").trim(); if (!/^https:\/\/drive\.google\.com\//i.test(u)) return ""; const m = u.match(/\/d\/([\w-]{10,})/) || u.match(/[?&]id=([\w-]{10,})/); return m ? m[1] : ""; };
 const imgSrc = (w, sz) => { if (!(w.ext && w.type === "image")) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };
 const ytId = u => { const m = String(u || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([\w-]{11})/); return m ? m[1] : ""; };
-const embedSrc = w => { const d = driveId(w.src); if (d) return `https://drive.google.com/file/d/${d}/preview`; const y = ytId(w.src); return y ? `https://www.youtube.com/embed/${y}` : ""; };
+const sunoId = u => { const m = String(u || "").match(/suno\.com\/song\/([0-9a-f-]{36})/i); return m ? m[1] : ""; };
+const embedSrc = w => { const d = driveId(w.src); if (d) return `https://drive.google.com/file/d/${d}/preview`; const y = ytId(w.src); if (y) return `https://www.youtube.com/embed/${y}?autoplay=1&rel=0`; const n = sunoId(w.src); return n ? `https://suno.com/embed/${n}` : ""; };
 const thumb = w => {
   const t = w.thumbnail || imgSrc(w, 800) || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
-  return t ? `<img loading="lazy" decoding="async" src="${esc(t)}" alt="" onerror="this.outerHTML='<div class=ph>🖼️</div>'">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
+  return t ? `<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(t)}" alt="" onerror="this.outerHTML='<div class=ph>🖼️</div>'">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
 };
 const workCard = w => `<a class="card work" href="#/work/${esc(w.id)}">${thumb(w)}<span class="pill">${ICON[w.type] || "✨"} ${LABEL[w.type] || "기타"}</span><div class="body"><b>${esc(w.title)}</b> ${tag(w)}</div></a>`;
 
@@ -54,13 +55,13 @@ function media(w) {
   const s = esc(w.src);
   if (w.ext && w.src) {
     const em = embedSrc(w), btn = `<a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">새 창에서 열기</a>`;
-    return em ? `<iframe class="embed ${w.type === "audio" ? "aud" : ""}" src="${esc(em)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe><p>${btn}</p>`
+    return em ? `<iframe class="embed ${w.type === "audio" || /suno\.com/.test(w.src) ? "aud" : ""}" src="${esc(em)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe><p>${btn}</p>`
       : `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a></div>`;
   }
   if (!w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>예시 작품이라 실제 파일이 없어요.</p></div>`;
   if (w.type === "image") return `<img class="full" src="${s}" alt="${esc(w.title)}">`;
-  if (w.type === "audio") return `<audio controls src="${s}"></audio>`;
-  if (w.type === "video") return `<video controls playsinline src="${s}"></video>`;
+  if (w.type === "audio") return `<audio controls autoplay src="${s}"></audio>`;
+  if (w.type === "video") return `<video controls autoplay playsinline src="${s}"></video>`;
   if (w.type === "game") return `<iframe class="game" src="${s}" sandbox="allow-scripts allow-same-origin" allow="autoplay"></iframe>`;
   return `<a class="btn" href="${s}" target="_blank" rel="noopener">작품 열기</a>`;
 }
