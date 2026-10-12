@@ -14,7 +14,9 @@ const driveId = u => { u = String(u || "").trim(); if (!/^https:\/\/drive\.googl
 const imgSrc = (w, sz) => { if (!(w.ext && w.type === "image")) return ""; const id = driveId(w.src); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${sz}` : ""; };
 const ytId = u => { const m = String(u || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([\w-]{11})/); return m ? m[1] : ""; };
 const sunoId = u => { const m = String(u || "").match(/suno\.com\/song\/([0-9a-f-]{36})/i); return m ? m[1] : ""; };
-const embedSrc = w => { const d = driveId(w.src); if (d) return `https://drive.google.com/file/d/${d}/preview`; const y = ytId(w.src); if (y) return `https://www.youtube.com/embed/${y}?autoplay=1&rel=0`; const n = sunoId(w.src); return n ? `https://suno.com/embed/${n}` : ""; };
+const canvaEmb = u => { const m = String(u || "").match(/^https:\/\/(?:www\.)?canva\.com\/design\/([\w-]+)(?:\/([\w-]+))?\/(?:view|watch)/i); return m ? `https://www.canva.com/design/${m[1]}/${m[2] ? m[2] + "/" : ""}view?embed` : ""; };
+window.openHere = b => { const u = b.dataset.u, box = b.closest(".ph"); box.outerHTML = `<iframe class="embed" src="${esc(u)}" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-pointer-lock" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe><p><a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">안 열리면 새 창에서 열기</a></p>`; };
+const embedSrc = w => { const d = driveId(w.src); if (d) return `https://drive.google.com/file/d/${d}/preview`; const y = ytId(w.src); if (y) return `https://www.youtube.com/embed/${y}?autoplay=1&rel=0`; const n = sunoId(w.src); if (n) return `https://suno.com/embed/${n}`; return canvaEmb(w.src); };
 const thumb = w => {
   const t = w.thumbnail || imgSrc(w, 800) || (w.type === "image" && !w.ext && /\.(png|jpe?g|webp|gif)$/i.test(w.src || "") ? w.src : "");
   return t ? `<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(t)}" alt="" onerror="this.outerHTML='<div class=ph>🖼️</div>'">` : `<div class="ph">${ICON[w.type] || "✨"}</div>`;
@@ -56,7 +58,7 @@ function media(w) {
   if (w.ext && w.src) {
     const em = embedSrc(w), btn = `<a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">새 창에서 열기</a>`;
     return em ? `<iframe class="embed ${w.type === "audio" || /suno\.com/.test(w.src) ? "aud" : ""}" src="${esc(em)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe><p>${btn}</p>`
-      : `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a></div>`;
+      : `<div class="ph huge">${ICON[w.type] || "✨"}<p>작품은 다른 서비스에 있어요. 새 창에서 열려요.</p><a class="btn" href="${s}" target="_blank" rel="noopener noreferrer">작품 보러가기</a><button class="btn2" data-u="${s}" onclick="openHere(this)">이 화면에서 열어 보기</button></div>`;
   }
   if (!w.src) return `<div class="ph huge">${ICON[w.type] || "✨"}<p>예시 작품이라 실제 파일이 없어요.</p></div>`;
   if (w.type === "image") return `<img class="full" src="${s}" alt="${esc(w.title)}">`;
