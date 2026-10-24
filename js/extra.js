@@ -9,12 +9,15 @@ async function rpc(name, args) {
   const t = await r.text();
   return t ? JSON.parse(t) : null;
 }
+// true: 썸네일이 없는 학생은 목록의 원에 프로필 이미지를 씁니다. false: 썸네일만 씁니다(없으면 글자 원).
+const LIST_USE_PROFILE = true;
 const applyProfiles = () => D.students.forEach(s => {
   s.base = s.base || { a: s.artistName, i: s.intro, p: s.profileImage }; const pr = PROFILES[s.id];
   s.artistName = pr && pr.name ? pr.name : s.base.a; s.intro = pr && pr.intro ? pr.intro : s.base.i;
   const aw = DBW.filter(w => w.type === "avatar" && w.studentId === s.id).pop(), pw = DBW.filter(w => w.type === "profile" && w.studentId === s.id).pop();
   const au = aw ? coverUrl(aw.src).replace("sz=w800", "sz=w400") : "", pu = pw ? coverUrl(pw.src).replace("sz=w800", "sz=w600") : "";
-  s.profileImage = au || s.base.p; s.bigImage = pu || au || s.base.p;
+  const pl = pw ? coverUrl(pw.src).replace("sz=w800", "sz=w400") : "";
+  s.profileImage = au || (LIST_USE_PROFILE && pl) || s.base.p; s.bigImage = pu || au || s.base.p;
 });
 window.mergeNote = w => { const n = NOTES[w.id] || {}; return { ...w, intent: n.intent || w.intent, prompt: n.prompt || w.prompt, reflection: n.reflection || w.reflection }; };
 window.topWorks = () => {
