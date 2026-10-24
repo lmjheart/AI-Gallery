@@ -2,6 +2,9 @@ const D = window.GALLERY, app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ICON = { image: "🖼️", audio: "🎵", video: "🎬", url: "🌐", game: "🎮", avatar: "⭕", profile: "🙂", etc: "✨" };
 const LABEL = { image: "이미지", audio: "노래", video: "동영상", url: "웹사이트", game: "게임", avatar: "썸네일", profile: "프로필", etc: "기타" };
+// 학생 페이지의 작품 순서(올린 순서와 상관없이 항상 이 순서). 바꾸려면 이 줄의 순서를 고치세요.
+const TYPE_ORDER = ["profile", "image", "audio", "game", "video", "url", "etc"];
+const rankOf = w => { const i = TYPE_ORDER.indexOf(w.type); return i < 0 ? 99 : i; };
 const worksOf = id => D.works.filter(w => w.studentId === id);
 const tag = o => o.sample ? '<span class="tag">예시</span>' : "";
 document.getElementById("logo").textContent = D.site.title;
@@ -48,7 +51,7 @@ function students(id) {
 function student(id) {
   const s = D.students.find(x => x.id === id);
   if (!s) return notFound();
-  const ws = worksOf(id);
+  const ws = worksOf(id).sort((a, b) => rankOf(a) - rankOf(b));
   const body = !ws.length ? `<p class="empty">아직 전시된 작품이 없어요.</p>`
     : `<div class="${ws.length <= 2 ? "list big" : "grid"}">${ws.map(workCard).join("")}</div>`;
   app.innerHTML = `<a class="back" href="#/students/${esc(s.exhibitionId)}">← 학생 목록</a>

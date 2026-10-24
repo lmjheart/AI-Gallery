@@ -141,9 +141,18 @@ window.writePage = function () {
     msg.textContent = ""; profileForm(sid, code); myWorks(sid, code); notesForm(sid, code);
   };
 };
+// 작품 모아보기 순서: "new" 최신순 | "old" 오래된 순 | "random" 무작위 | "hearts" 하트 많은 순
+const ALL_ORDER = "new";
+const ordered = list => {
+  const a = list.slice();
+  if (ALL_ORDER === "new") return a.reverse();
+  if (ALL_ORDER === "random") return a.sort(() => Math.random() - 0.5);
+  if (ALL_ORDER === "hearts") return a.sort((x, y) => (HEARTS[y.id] || 0) - (HEARTS[x.id] || 0));
+  return a;
+};
 window.allPage = function () {
   const f = window.__f || "all";
-  const list = D.works.filter(w => f === "all" || w.type === f).sort((a, b) => (HEARTS[b.id] || 0) - (HEARTS[a.id] || 0));
+  const list = ordered(D.works.filter(w => f === "all" || w.type === f));
   app.innerHTML = `<h2>작품 모아보기</h2><div class="chips">${[["all", "전체"], ...Object.entries(LABEL).filter(([k]) => k !== "avatar")].map(([k, v]) => `<button class="chip ${k === f ? "on" : ""}" data-k="${k}">${k === "all" ? "" : ICON[k] + " "}${v}</button>`).join("")}</div>
     ${list.length ? `<div class="grid">${list.map(workCard).join("")}</div>` : '<p class="empty">이 종류의 작품이 아직 없어요.</p>'}`;
   app.querySelectorAll(".chip").forEach(b => b.onclick = () => { window.__f = b.dataset.k; window.allPage(); });
