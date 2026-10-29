@@ -1,3 +1,33 @@
+/* =====================================================
+   관리자 스위치 (true / false 만 바꾸세요)
+   SHOW_WRITE_TAB : 위쪽 메뉴에 '내 작품 글쓰기' 탭을 보이게 할지
+                    false 여도 주소 끝에 #/write 를 붙이면 기능은 그대로 열려요
+   WRITE_ENABLED  : 글쓰기 기능 자체를 켜 둘지
+                    false 로 하면 주소로 들어와도 '지금은 글쓰기 기간이 아니에요'만 보여요
+   ===================================================== */
+const SHOW_WRITE_TAB = false;
+const WRITE_ENABLED = true;
+
+/* =====================================================
+   방명록 비속어 필터
+   걸러야 할 말이 더 생기면 BAD_WORDS 에 추가하세요.
+   (일상 단어와 겹치는 말은 넣지 마세요. 예: '보지', '시바견', '미친')
+   ===================================================== */
+const BADWORD_MESSAGE = "고운 말을 사용해 주세요 🙂\n비속어나 욕설이 포함되어 있어 등록할 수 없어요.";
+const BAD_WORDS = [
+  "시발", "씨발", "씨바", "쉬발", "씹새", "씹창", "씹년", "씹놈",
+  "병신", "븅신", "벼엉신", "지랄", "좆", "존나", "개새끼", "개새기",
+  "새끼야", "미친놈", "미친년", "미친새끼", "썅", "쌍놈", "쌍년", "닥쳐",
+  "느금마", "니애미", "엿먹", "꺼지라", "창녀", "창년", "섹스", "야동",
+  "빨통", "젖탱", "또라이", "찐따", "맘충", "틀딱",
+  "ㅅㅂ", "ㅆㅂ", "ㅂㅅ", "ㅈㄹ", "ㅈㄴ", "ㅁㅊ", "ㄲㅈ", "ㅅㄲ", "ㄷㅊ",
+  "fuck", "fuk", "shit", "bitch", "asshole", "bastard", "cunt", "pussy", "slut", "whore", "nigger", "nigga", "retard"
+];
+// 공백·점·특수문자를 지워서 "시. 발" 같은 우회도 잡기
+const normBad = t => String(t || "").toLowerCase().replace(/[^a-z0-9가-힣ㄱ-ㅎㅏ-ㅣ]/g, "");
+const BAD_NORM = BAD_WORDS.map(normBad);
+const containsBadWord = text => { const t = normBad(text); return !!t && BAD_NORM.some(b => t.includes(b)); };
+
 const CF = window.GCONF || {}, ON = !!(CF.url && CF.key);
 let HEARTS = {}, NOTES = {}, PROFILES = {}, DBW = [];
 const BASE_WORKS = D.works.slice();
@@ -55,6 +85,7 @@ student = function (id) {
   sec.querySelector("#gs").onclick = async () => {
     const n = gn.value.trim(), m = gm.value.trim();
     if (!n || !m) { msg.textContent = "별명과 메시지를 모두 적어 주세요."; return; }
+    if (containsBadWord(n) || containsBadWord(m)) { alert(BADWORD_MESSAGE); return; }
     try { await rpc("add_guestbook", { s: id, n, m, d: dev }); gn.value = gm.value = ""; msg.textContent = ""; load(); }
     catch (e) { msg.textContent = String(e.message).includes("slow") ? "잠시 후에 다시 남겨 주세요." : "등록하지 못했어요. 다시 시도해 주세요."; }
   };
@@ -131,6 +162,7 @@ function notesForm(sid, code) {
 }
 window.writePage = function () {
   if (!ON) { app.innerHTML = '<p class="empty">아직 준비 중이에요.</p>'; return; }
+  if (!WRITE_ENABLED) { app.innerHTML = '<p class="empty">지금은 작품 글쓰기 기간이 아니에요.</p>'; return; }
   app.innerHTML = `<h2>내 작품 글쓰기</h2><p>선생님께 받은 작가 코드로 내 정보와 작품을 올릴 수 있어요.</p>
     <div class="info"><select id="ws">${D.students.map(s => `<option value="${esc(s.id)}">${esc(s.artistName)}</option>`).join("")}</select>
     <input id="wc" type="password" placeholder="작가 코드"><button class="btn2" id="wok">확인</button><p id="wmsg" class="note"></p></div>
@@ -160,7 +192,7 @@ window.allPage = function () {
 (async () => {
   document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/all">작품 모아보기</a>');
   if (ON) {
-    document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/write">내 작품 글쓰기</a>');
+    if (SHOW_WRITE_TAB) document.querySelector(".top nav").insertAdjacentHTML("beforeend", '<a href="#/write">내 작품 글쓰기</a>');
     const refresh = async () => { try { const p = await rpc("get_public"); HEARTS = p.hearts || {}; NOTES = p.notes || {}; PROFILES = p.profiles || {}; DBW = p.works || []; D.works = BASE_WORKS.concat(DBW.filter(w => w.type !== "avatar").map(w => ({ ...w, ext: true, thumbnail: coverUrl(w.cover) }))); applyProfiles(); return true; } catch (e) { return false; } };
     await refresh();
     // 첫 화면으로 돌아올 때 다른 노트북의 하트까지 반영
